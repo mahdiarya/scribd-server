@@ -1,0 +1,7 @@
+package model
+
+// Book defines the book metadata.
+type Book struct {
+	ID    string `json:"id"`
+	Title string `json:"title"`
+}
