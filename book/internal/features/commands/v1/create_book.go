@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"scribd/book/pkg/model"
+
+	"github.com/google/uuid"
 )
 
 type bookRepository interface {
@@ -21,6 +23,11 @@ func NewCreateBookController(repo bookRepository) CreateBookController {
 	return CreateBookController{repo}
 }
 
-func (h CreateBookController) CreateOrder(ctx context.Context, cmd *model.Book) error {
-	return h.repo.Put(ctx, cmd.ID, cmd)
+func (h CreateBookController) CreateBook(ctx context.Context, cmd *model.Book) (*model.Book, error) {
+	cmd.ID = uuid.New().String()
+	err := h.repo.Put(ctx, cmd.ID, cmd)
+	if err != nil {
+		return nil, err
+	}
+	return cmd, err
 }

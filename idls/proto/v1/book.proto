@@ -1,0 +1,30 @@
+syntax = "proto3";
+package idls.proto.v1;
+
+option go_package = "gen/proto/v1;protov1";
+
+message Book {
+  string id = 1;
+  string title = 2;
+}
+
+service BookService {
+  rpc GetBook(GetBookRequest) returns (GetBookResponse);
+  rpc PostBook(PostBookRequest) returns (PostBookResponse);
+}
+
+message GetBookRequest {
+  string book_id = 1;
+}
+
+message GetBookResponse {
+  Book book = 1;
+}
+
+message PostBookRequest {
+  string title = 1;
+}
+
+message PostBookResponse {
+  Book book = 1;
+}

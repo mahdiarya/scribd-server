@@ -10,7 +10,6 @@ import (
 	"scribd/book/pkg/model"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 // Handler defines a book metadata HTTP handler.
@@ -29,7 +28,7 @@ func (h *Handler) HandleRoutes(router *gin.Engine) {
 	// Command Routes
 	v1.POST("/book", h.PostBook)
 	// Queries Routes
-	v1.GET("/book", h.GetBookDetails)
+	v1.GET("/book", h.GetBook)
 }
 
 // PostBook handles POST /book requests.
@@ -40,19 +39,17 @@ func (h *Handler) PostBook(context *gin.Context) {
 		context.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
-	body.ID = uuid.New().String()
-	ctx := context.Request.Context()
-	err := h.ctrl.CreateOrder(ctx, &body)
+	res, err := h.ctrl.CreateBook(context.Request.Context(), &body)
 	if err != nil {
 		log.Printf("Repository get error: %v\n", err)
 		context.JSON(http.StatusInternalServerError, &body)
 		return
 	}
-	context.JSON(http.StatusAccepted, &body)
+	context.JSON(http.StatusAccepted, &res)
 }
 
 // GetMovieDetails handles GET /book requests.
-func (h *Handler) GetBookDetails(context *gin.Context) {
+func (h *Handler) GetBook(context *gin.Context) {
 	id := context.Query("id")
 	if id == "" {
 		context.JSON(http.StatusBadRequest, gin.H{
@@ -61,8 +58,7 @@ func (h *Handler) GetBookDetails(context *gin.Context) {
 		})
 		return
 	}
-	ctx := context.Request.Context()
-	m, err := h.ctrl.GetBook(ctx, id)
+	m, err := h.ctrl.GetBook(context.Request.Context(), id)
 	if err != nil && errors.Is(err, repository.ErrNotFound) {
 		context.JSON(http.StatusNotFound, gin.H{
 			"code":    http.StatusNotFound,

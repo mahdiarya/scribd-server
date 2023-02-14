@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -10,10 +12,14 @@ import (
 	"time"
 
 	book "scribd/book/internal/features"
+	grpcHandler "scribd/book/internal/handler/grpc"
 	httpHandler "scribd/book/internal/handler/http"
 	"scribd/book/internal/repository/memory"
+	gen "scribd/gen/proto/v1"
 
 	"github.com/gin-gonic/gin"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 const serviceName = "book"
@@ -23,7 +29,23 @@ func main() {
 	repo := memory.New()
 	ctrl := book.New(repo)
 
-	startHttp(ctrl)
+	//startHttp(ctrl)
+	startGrpc(ctrl)
+}
+
+func startGrpc(ctrl *book.Application) {
+	h := grpcHandler.New(ctrl)
+
+	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", 8181))
+	if err != nil {
+		log.Fatalf("Failed to listen: %v", err)
+	}
+	srv := grpc.NewServer()
+	reflection.Register(srv)
+	gen.RegisterBookServiceServer(srv, h)
+	if err := srv.Serve(lis); err != nil {
+		log.Fatalf("Failed to start the gRPC server: %v", err)
+	}
 }
 
 func startHttp(ctrl *book.Application) {
