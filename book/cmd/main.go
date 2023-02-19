@@ -36,7 +36,7 @@ func main() {
 		panic(err)
 	}
 	instanceID := discovery.GenerateInstanceID(serviceName)
-	if err := registry.Register(ctx, instanceID, serviceName, fmt.Sprintf("localhost:%d", 8484)); err != nil {
+	if err := registry.Register(ctx, instanceID, serviceName, fmt.Sprintf("localhost:%d", 8500)); err != nil {
 		panic(err)
 	}
 	go func() {
