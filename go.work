@@ -3,3 +3,5 @@ go 1.19
 use ./book
 use ./gen
 use ./eventstore
+use ./pkg
+use ./internal

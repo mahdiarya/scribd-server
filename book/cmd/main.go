@@ -12,10 +12,13 @@ import (
 	"time"
 
 	book "scribd/book/internal/features"
+	eventstoregateway "scribd/book/internal/gateway/eventstore/grpc"
 	grpcHandler "scribd/book/internal/handler/grpc"
 	httpHandler "scribd/book/internal/handler/http"
 	"scribd/book/internal/repository/memory"
 	gen "scribd/gen/proto/v1"
+	"scribd/pkg/discovery"
+	"scribd/pkg/discovery/consul"
 
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc"
@@ -25,9 +28,30 @@ import (
 const serviceName = "book"
 
 func main() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	registry, err := consul.NewRegistry("localhost:8500")
+	if err != nil {
+		panic(err)
+	}
+	instanceID := discovery.GenerateInstanceID(serviceName)
+	if err := registry.Register(ctx, instanceID, serviceName, fmt.Sprintf("localhost:%d", 8484)); err != nil {
+		panic(err)
+	}
+	go func() {
+		for {
+			if err := registry.ReportHealthyState(instanceID, serviceName); err != nil {
+				log.Fatalf("Failed to report healthy state: %v", err)
+			}
+			time.Sleep(1 * time.Second)
+		}
+	}()
+	defer registry.Deregister(ctx, instanceID, serviceName)
 
 	repo := memory.New()
-	ctrl := book.New(repo)
+	eventGateway := eventstoregateway.New(registry)
+	ctrl := book.New(repo, eventGateway)
 
 	//startHttp(ctrl)
 	startGrpc(ctrl)
